@@ -5,3 +5,4 @@ dist/*
 .watchr
 
 *.pyo
+.spyderproject
