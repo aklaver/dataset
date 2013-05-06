@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 class Database(object):
 
-    def __init__(self, url):
+    def __init__(self, url, search_path):
         kw = {}
         if url.startswith('postgres'):
             kw['poolclass'] = NullPool
@@ -27,7 +27,11 @@ class Database(object):
         self.engine = construct_engine(engine)
         self.metadata = MetaData()
         self.metadata.bind = self.engine
-        self.metadata.reflect(self.engine)
+        if search_path and url.startswith('postgres'):
+            for schema in search_path:
+                self.metadata.reflect(self.engine, schema=schema)
+        else:
+            self.metadata.reflect(self.engine)
         self._tables = {}
 
     @property

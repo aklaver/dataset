@@ -7,7 +7,7 @@ from dataset.persistence.database import Database
 from dataset.persistence.table import Table
 from dataset.freeze.app import freeze
 
-def connect(url):
+def connect(url, search_path=None):
     """
     Opens a new connection to a database. *url* can be any valid `SQLAlchemy engine URL`_. Returns
     an instance of :py:class:`Database <dataset.Database>`.
@@ -17,6 +17,6 @@ def connect(url):
 
     .. _SQLAlchemy Engine URL: http://docs.sqlalchemy.org/en/latest/core/engines.html#sqlalchemy.create_engine
     """
-    return Database(url)
+    return Database(url, search_path)
 
 
