@@ -24,11 +24,12 @@ class Database(object):
         engine = create_engine(url, **kw)
         self.lock = RLock()
         self.url = url
+        self.search_path = search_path
         self.engine = construct_engine(engine)
         self.metadata = MetaData()
         self.metadata.bind = self.engine
-        if search_path and url.startswith('postgres'):
-            for schema in search_path:
+        if self.search_path and url.startswith('postgres'):
+            for schema in self.search_path:
                 self.metadata.reflect(self.engine, schema=schema)
         else:
             self.metadata.reflect(self.engine)
@@ -63,7 +64,7 @@ class Database(object):
             self._tables[table_name] = table
             return Table(self, table)
 
-    def load_table(self, table_name):
+    def load_table(self, table_name, schema=None):
         """
         Loads a table. This will fail if the tables does not already
         exist in the database. If the table exists, its columns will be
@@ -77,7 +78,8 @@ class Database(object):
         """
         with self.lock:
             log.debug("Loading table: %s on %r" % (table_name, self))
-            table = SQLATable(table_name, self.metadata, autoload=True)
+            table = SQLATable(table_name, self.metadata, autoload=True, 
+                              schema=schema)
             self._tables[table_name] = table
             return Table(self, table)
 
@@ -96,7 +98,11 @@ class Database(object):
         with self.lock:
             if table_name in self._tables:
                 return Table(self, self._tables[table_name])
-            if self.engine.has_table(table_name):
+            if table_name in self.tables:
+                if self.search_path:
+                    schema = table_name.split('.')[0]
+                    table_name = table_name.split('.')[1]
+                    self.load_table(table_name, schema=schema)
                 return self.load_table(table_name)
             else:
                 return self.create_table(table_name)
